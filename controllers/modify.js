@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const AdditionalDetails =require('../models/AdditionalDetails')
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -20,7 +21,7 @@ exports.editFunc = async (req, res) => {
     const decode = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decode.id;
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate("additionalDetails");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -28,7 +29,7 @@ exports.editFunc = async (req, res) => {
       });
     }
 
-    const { email, password } = req.body;
+    const { email, password ,additionalDetails} = req.body;
 
     if (email) {
       user.email = email;
@@ -56,17 +57,35 @@ exports.editFunc = async (req, res) => {
       const hashed = await bcrypt.hash(password, 10);
       user.password = hashed;
     }
+    let details=null;
+    if(additionalDetails){
+      const {name,contactNo,address}=additionalDetails;
+      if(user.additionalDetails){
+        const updatedDetails=await AdditionalDetails.findByIdAndUpdate(user.additionalDetails,{
+          name:name,
+          contactNo:contactNo,
+          address:address
+        },{new:true})
+        details=updatedDetails;
+      }
+      else{
+        const newDetails=await AdditionalDetails.create({name,contactNo,address});
+        user.additionalDetails=newDetails._id;
+        details=newDetails;
+      }
+    }
 
-    // ✅ Save updated user
+    // Save updated user
     await user.save();
 
-    // ✅ Send response only after save
+    // Send response only after save
     return res.status(200).json({
       success: true,
       user: {
         id: user._id,
         email: user.email,
         accountType: user.accountType,
+        details:details
       },
       message: "User updated successfully",
     });
@@ -99,6 +118,8 @@ exports.deleteFunc = async (req, res) => {
     const jwt_secret = process.env.JWT_SECRET;
     const decode = jwt.verify(token, jwt_secret);
     const id = decode.id;
+    const user=await User.findById(id);
+    await AdditionalDetails.findByIdAndDelete(user.additionalDetails);
     await User.findByIdAndDelete(id);
     res.clearCookie("loginToken");
     return res.status(200).json({

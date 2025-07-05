@@ -14,7 +14,8 @@ router.post('/home',auth,(req,res)=>{
         messag:"welcome to home "
     })
 })
-router.put('/update',editFunc)
-router.delete('/deleteUser',deleteFunc)
+router.put('/update',auth,editFunc)
+router.delete('/deleteUser',auth,deleteFunc)
+
 
 module.exports=router;
