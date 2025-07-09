@@ -1,25 +1,25 @@
 const User = require("../models/User");
-const AdditionalDetails =require('../models/AdditionalDetails')
+const AdditionalDetails = require("../models/AdditionalDetails");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 exports.editFunc = async (req, res) => {
   try {
-    const token =
-      req.cookies.loginToken ||
-      req.header("Authorization")?.replace("Bearer ", "") ||
-      req.body.token;
+    // const token =
+    //   req.cookies.loginToken ||
+    //   req.header("Authorization")?.replace("Bearer ", "") ||
+    //   req.body.token;
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Please login first",
-      });
-    }
+    // if (!token) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Please login first",
+    //   });
+    // }
 
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decode.id;
+    // const decode = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = req.user.id;
 
     const user = await User.findById(userId).populate("additionalDetails");
     if (!user) {
@@ -29,7 +29,8 @@ exports.editFunc = async (req, res) => {
       });
     }
 
-    const { email, password ,additionalDetails} = req.body;
+    const { email, password, additionalDetails } = req.body;
+    let accessToken;
 
     if (email) {
       user.email = email;
@@ -51,27 +52,32 @@ exports.editFunc = async (req, res) => {
         httpOnly: true,
         expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       });
+      accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+              expiresIn: "15min",
+          });
     }
 
     if (password) {
       const hashed = await bcrypt.hash(password, 10);
       user.password = hashed;
     }
-    let details=null;
-    if(additionalDetails){
-      const {name,contactNo,address}=additionalDetails;
-      if(user.additionalDetails){
-        const updatedDetails=await AdditionalDetails.findByIdAndUpdate(user.additionalDetails,{
-          name:name,
-          contactNo:contactNo,
-          address:address
-        },{new:true})
-        details=updatedDetails;
-      }
-      else{
-        const newDetails=await AdditionalDetails.create({name,contactNo,address});
-        user.additionalDetails=newDetails._id;
-        details=newDetails;
+    let details = null;
+    if (additionalDetails) {
+      const { name, address } = additionalDetails;
+      if (user.additionalDetails) {
+        const updatedDetails = await AdditionalDetails.findByIdAndUpdate(
+          user.additionalDetails,
+          {
+            name: name,
+            address: address,
+          },
+          { new: true }
+        );
+        details = updatedDetails;
+      } else {
+        const newDetails = await AdditionalDetails.create({ name, address });
+        user.additionalDetails = newDetails._id;
+        details = newDetails;
       }
     }
 
@@ -85,7 +91,8 @@ exports.editFunc = async (req, res) => {
         id: user._id,
         email: user.email,
         accountType: user.accountType,
-        details:details
+        details: details,
+        accessToken,
       },
       message: "User updated successfully",
     });
@@ -98,27 +105,24 @@ exports.editFunc = async (req, res) => {
   }
 };
 
-
-
-
 exports.deleteFunc = async (req, res) => {
-  const token =
-    req.cookies.loginToken ||
-    req.body.token ||
-    req.header("Authorization")?.replace("Bearer ", "");
+  // const token =
+  //   req.cookies.loginToken ||
+  //   req.body.token ||
+  //   req.header("Authorization")?.replace("Bearer ", "");
 
-  if (!token) {
-    console.log("token not present ");
-    return res.status(401).json({
-      success: false,
-      message: "please Log in First",
-    });
-  }
+  // if (!token) {
+  //   console.log("token not present ");
+  //   return res.status(401).json({
+  //     success: false,
+  //     message: "please Log in First",
+  //   });
+  // }
   try {
-    const jwt_secret = process.env.JWT_SECRET;
-    const decode = jwt.verify(token, jwt_secret);
-    const id = decode.id;
-    const user=await User.findById(id);
+    // const jwt_secret = process.env.JWT_SECRET;
+    // const decode = jwt.verify(token, jwt_secret);
+    const id = req.user.id;
+    const user = await User.findById(id);
     await AdditionalDetails.findByIdAndDelete(user.additionalDetails);
     await User.findByIdAndDelete(id);
     res.clearCookie("loginToken");

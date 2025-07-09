@@ -5,10 +5,6 @@ const detailsSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  contactNo: {
-    type: Number,
-    trim: true,
-  },
   address: {
     type: String,
     trim: true,

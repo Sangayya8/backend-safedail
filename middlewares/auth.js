@@ -54,26 +54,6 @@ exports.isAdmin = async (req, res, next) => {
     });
   }
 };
-// isFarmer
-// exports.isFarmer=async (req,res,next) => {
-//     try {
-//         if(req.user.accountType !== "Farmer" ){
-//             return res.status(401).json({
-//             success:false,
-//             message:"Protected Route for Only Farmers"
-//             })
-//         }
-//         next();
-
-//     } catch (error) {
-//         console.log("error in authenticating Farmer "+error);
-//         return res.status(500).json({
-//             success:false,
-//             message:error.message
-//         })
-//     }
-// }
-
 // isCustomer
 exports.isCustomer = async (req, res, next) => {
   try {
