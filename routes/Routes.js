@@ -14,10 +14,12 @@ router.post('/home',auth,(req,res)=>{
         messag:"welcome to home "
     })
 })
-router.put('/update',auth,editFunc)
 router.post('/sendOtp',sendOtp)
 router.delete('/deleteUser',auth,deleteFunc)
 router.get("/refresh-token", refreshAccessToken);
+
+
+
 
 router.post('/logout', (req, res) => {
   res.clearCookie("loginToken");

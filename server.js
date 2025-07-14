@@ -10,7 +10,14 @@ app.use(cookieParser())
 
 // importing routes and mounting 
 const routes=require('./routes/Routes')
+const userRoutes=require('./routes/User')
+const contactRoutes=require('./routes/Contact')
+
+
+
 app.use('/api/v1',routes);
+app.use('/api/v1/user',userRoutes)
+app.use("/api/v1/contacts",contactRoutes)
 
 // activate 
 app.listen(port,()=>{

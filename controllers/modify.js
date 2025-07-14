@@ -2,6 +2,7 @@ const User = require("../models/User");
 const AdditionalDetails = require("../models/AdditionalDetails");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const Contact = require("../models/Contact");
 require("dotenv").config();
 
 exports.editFunc = async (req, res) => {
@@ -91,7 +92,7 @@ exports.editFunc = async (req, res) => {
         id: user._id,
         email: user.email,
         accountType: user.accountType,
-        details: details,
+        additionalDetails: details,
         accessToken,
       },
       message: "User updated successfully",
@@ -124,6 +125,7 @@ exports.deleteFunc = async (req, res) => {
     const id = req.user.id;
     const user = await User.findById(id);
     await AdditionalDetails.findByIdAndDelete(user.additionalDetails);
+    await Contact.deleteMany({user:id})
     await User.findByIdAndDelete(id);
     res.clearCookie("loginToken");
     return res.status(200).json({

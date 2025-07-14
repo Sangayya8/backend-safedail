@@ -186,29 +186,33 @@ exports.sendOtp = async (req, res) => {
   }
 };
 exports.refreshAccessToken = (req, res) => {
-  const token = req.cookies.loginToken;
+  try {
+    const token = req.cookies?.loginToken;
 
-  if (!token) {
-    return res.status(401).json({ message: "No refresh token found" });
-  }
+    if (!token) {
+      return res.status(401).json({ message: "No refresh token found" });
+    }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: "Invalid refresh token" });
+    const decode = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Create new access token
     const payload = {
-        email: email,
-        id: userExist._id,
-        phoneNumber: userExist.phoneNumber,
-      };
+      email: decode.email,
+      id: decode._id,
+      phoneNumber: decode.phoneNumber,
+    };
 
-    const newAccessToken = jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" }
-    );
+    const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
 
     res.json({ accessToken: newAccessToken });
-  });
+  } catch (error) {
+    console.log("error in refreshing token");
+    res.status(401).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
+
 

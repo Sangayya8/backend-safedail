@@ -23,6 +23,10 @@ const userSchema=new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"AdditionalDetails",
     },
+    lastContactSync: {
+    type: Date,
+    default: null,
+  },
 
 })
 module.exports=mongoose.model('User',userSchema);
