@@ -1,57 +1,74 @@
 require("dotenv").config();
 const User = require("../models/User");
 const Contact = require("../models/Contact");
+const Number=require("../models/Number")
 
 
 exports.syncContacts = async (req, res) => {
   try {
-    const userId = req.user.id; // ID of the logged-in user
-    const contacts = req.body.contacts; // JSON contacts array from frontend
+    const userId = req.user.id;
+    const contacts = req.body.contacts;
 
-    // Validate input
     if (!Array.isArray(contacts) || contacts.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Contacts must be a non-empty array" });
+      return res.status(400).json({
+        message: "Contacts must be a non-empty array",
+      });
     }
 
+    // Clear previous contacts
     await Contact.deleteMany({ user: userId });
 
     const contactDocs = await Promise.all(
       contacts.map(async (contact) => {
-        const existingUser = await User.findOne({ phoneNumber: contact.phone });
+        const phoneStr = contact.phone;
 
+        // Step 1: Find or create Number document
+        let numberDoc = await Number.findOne({ number: phoneStr });
+        if (!numberDoc) {
+          numberDoc = await Number.create({ number: phoneStr });
+        }
+
+        // Step 2: Check if this number is used by a User
+        const existingUser = await User.findOne({ phoneNumber: numberDoc._id });
+
+        // Step 3: Build the contact document
         return {
           user: userId,
           name: contact.name,
-          phone: contact.phone,
+          phone: numberDoc._id,
           isAppUser: !!existingUser,
         };
       })
     );
 
+    // Insert all contacts
     await Contact.insertMany(contactDocs);
-    await User.findByIdAndUpdate(userId, {
-  lastContactSync: new Date()
-});
 
-    res.status(200).json({
+    // Update last sync timestamp
+    await User.findByIdAndUpdate(userId, {
+      lastContactSync: new Date(),
+    });
+
+    return res.status(200).json({
       message: "Contacts synced successfully",
       total: contactDocs.length,
     });
   } catch (error) {
     console.error("Error syncing contacts:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Something went wrong while syncing contacts",
       error: error.message,
     });
   }
 };
+
 exports.getAllContacts=async(req,res)=>{
   try {
     const userId=req.user.id;  // ID of the logged-in user
 
-    const allContactsOfUSer=await Contact.find({user:userId}).select("name phone");
+    const allContactsOfUSer=await Contact.find({user:userId}).select("name phone").populate({path:"phone",
+      select:"number"
+    });
     return res.status(200).json({
       success:true,
       allContactsOfUSer,

@@ -1,14 +1,16 @@
 require("dotenv").config();
 const User = require("../models/User");
+const AdditionalDetails = require("../models/AdditionalDetails");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Otp = require("../models/Otp");
 const otpGenerator = require("otp-generator");
+const Number = require("../models/Number");
 
 exports.signUp = async (req, res) => {
   try {
     const { name, email, password, phoneNumber, otp } = req.body;
-    if ((!name || !email|| !password|| !otp|| !phoneNumber)) {
+    if (!name || !email || !password || !otp || !phoneNumber) {
       return res.status(403).json({
         success: false,
         message: "please enter all the details",
@@ -17,7 +19,7 @@ exports.signUp = async (req, res) => {
     // if user already exist
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: "user Already Exist please log in",
       });
@@ -53,11 +55,21 @@ exports.signUp = async (req, res) => {
       });
     }
     // entry createing
+    const number = await Number.findOne({ number: phoneNumber });
+    if (number) {
+      const numberExist = await User.findOne({ phoneNumber: number._id });
+      if (numberExist)
+        return res.status(409).json({
+          success: false,
+          message: "number Already Exist",
+        });
+    }
+    const newUserNumber = await Number.create({ number: phoneNumber });
     const user = await User.create({
       name,
       email,
       password: hasshedpassword,
-      phoneNumber,
+      phoneNumber: newUserNumber._id,
     });
     return res.status(200).json({
       success: true,
@@ -97,7 +109,6 @@ exports.login = async (req, res) => {
 
     // check if the password is correct or not
     if (await bcrypt.compare(password, userExist.password)) {
-
       const payload = {
         email: email,
         id: userExist._id,
@@ -109,15 +120,15 @@ exports.login = async (req, res) => {
         expiresIn: "7d",
       });
       userExist = userExist.toObject();
-     //   userExist.token = token;
+      //   userExist.token = token;
       userExist.password = undefined;
 
       const option = {
-        expires: new Date(Date.now() +  7 * 24 * 60 * 60 * 1000),
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       };
       const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: "15m",
-        });
+      });
 
       // create a cookie in response and send
       return res.cookie("loginToken", token, option).status(200).json({
@@ -214,5 +225,3 @@ exports.refreshAccessToken = (req, res) => {
     });
   }
 };
-
-

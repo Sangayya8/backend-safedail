@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const AdditionalDetails = require("../models/AdditionalDetails");
+const Number=require('../models/Number')
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Contact = require("../models/Contact");
@@ -77,14 +78,18 @@ exports.editFunc = async (req, res) => {
         details = updatedDetails;
       } else {
         const newDetails = await AdditionalDetails.create({ name, address });
+
         user.additionalDetails = newDetails._id;
         details = newDetails;
       }
     }
 
     // Save updated user
-    await user.save();
-
+    const updatedUser=await user.save();
+    console.log("details",updatedUser)
+    const updatedNumbe=await Number.findByIdAndUpdate(updatedUser.phoneNumber._id,{
+      name:details._id
+    })
     // Send response only after save
     return res.status(200).json({
       success: true,
@@ -107,36 +112,53 @@ exports.editFunc = async (req, res) => {
 };
 
 exports.deleteFunc = async (req, res) => {
-  // const token =
-  //   req.cookies.loginToken ||
-  //   req.body.token ||
-  //   req.header("Authorization")?.replace("Bearer ", "");
-
-  // if (!token) {
-  //   console.log("token not present ");
-  //   return res.status(401).json({
-  //     success: false,
-  //     message: "please Log in First",
-  //   });
-  // }
   try {
-    // const jwt_secret = process.env.JWT_SECRET;
-    // const decode = jwt.verify(token, jwt_secret);
-    const id = req.user.id;
-    const user = await User.findById(id);
-    await AdditionalDetails.findByIdAndDelete(user.additionalDetails);
-    await Contact.deleteMany({user:id})
-    await User.findByIdAndDelete(id);
+    const userId = req.user.id;
+
+    // 1. Find the user
+    const user = await User.findById(userId).select("phoneNumber");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 2. Find all contacts of the user
+    const contacts = await Contact.find({ user: userId }).select("phone");
+    const contactPhoneIds = contacts.map(contact => contact.phone?.toString());
+
+    // 3. Exclude the user's own phone number from deletion
+    const filteredPhoneIds = contactPhoneIds.filter(
+      phoneId => phoneId !== user.phoneNumber.toString()
+    );
+
+    // 4. Delete contacts
+    await Contact.deleteMany({ user: userId });
+
+    // 5. Delete number documents only from contacts (excluding user's number)
+    if (filteredPhoneIds.length > 0) {
+      await Number.deleteMany({ _id: { $in: filteredPhoneIds } });
+    }
+
+    // 6. Delete the user (without touching AdditionalDetails or Number)
+    await User.findByIdAndDelete(userId);
+
+    // 7. Clear auth cookie
     res.clearCookie("loginToken");
+
     return res.status(200).json({
       success: true,
-      message: "user deleted successfully",
+      message: "User deleted successfully. Contacts and related numbers removed",
     });
+
   } catch (error) {
-    console.log("error in decoding token " + error);
-    return res.status(401).json({
+    console.error("Error deleting user data:", error.message);
+    return res.status(500).json({
       success: false,
-      message: "token is invalid",
+      message: "Error while deleting user",
+      error: error.message,
     });
   }
 };
+

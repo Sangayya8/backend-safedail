@@ -11,7 +11,8 @@ const contactSchema = new mongoose.Schema({
     trim: true,
   },
   phone: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref:"Number",
     trim: true,
   },
   isAppUser: {

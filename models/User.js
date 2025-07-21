@@ -7,9 +7,9 @@ const userSchema=new mongoose.Schema({
         trim:true
     },
     phoneNumber:{
-        type:String,
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Number",
         required:true,
-        trim:true,
     },
     password:{
         type:String,
