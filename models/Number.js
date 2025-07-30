@@ -6,6 +6,10 @@ const numberSchema = new mongoose.Schema({
     trim: true,
     unique: true,
   },
+  blackListed:{
+    type:Boolean,
+    default:false,
+  },
   name: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AdditionalDetails",

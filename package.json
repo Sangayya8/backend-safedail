@@ -1,5 +1,5 @@
 {
-  "name": "farmlink",
+  "name": "backend-server",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -20,5 +20,9 @@
     "nodemailer": "^7.0.5",
     "nodemon": "^3.1.9",
     "otp-generator": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=22.15.0",
+    "npm": ">=11.3.0"
   }
 }
