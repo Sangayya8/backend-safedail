@@ -41,7 +41,7 @@ exports.editFunc = async (req, res) => {
       const payload = {
         email,
         id: user._id,
-        accountType: user.accountType,
+        role: user.accountType,
       };
 
       const newToken = jwt.sign(payload, process.env.JWT_SECRET, {

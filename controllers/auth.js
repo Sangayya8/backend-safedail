@@ -9,7 +9,7 @@ const Number = require("../models/Number");
 
 exports.signUp = async (req, res) => {
   try {
-    const { name, email, password, phoneNumber, otp } = req.body;
+    const { name, email, password, phoneNumber, otp , accountType} = req.body;
     if (!name || !email || !password || !otp || !phoneNumber) {
       return res.status(403).json({
         success: false,
@@ -66,6 +66,7 @@ exports.signUp = async (req, res) => {
     }
     const newUserNumber = await Number.create({ number: phoneNumber });
     const user = await User.create({
+      accountType:accountType||"Customer",
       name,
       email,
       password: hasshedpassword,
@@ -113,6 +114,7 @@ exports.login = async (req, res) => {
         email: email,
         id: userExist._id,
         phoneNumber: userExist.phoneNumber,
+        role:userExist.accountType,
       };
 
       // create a token
@@ -210,6 +212,7 @@ exports.refreshAccessToken = (req, res) => {
       email: decode.email,
       id: decode._id,
       phoneNumber: decode.phoneNumber,
+      role:decode.role,
     };
 
     const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {

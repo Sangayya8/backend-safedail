@@ -39,7 +39,7 @@ exports.auth = async (req, res, next) => {
 // isAdmin
 exports.isAdmin = async (req, res, next) => {
   try {
-    if (req.user.accountType !== "Seller") {
+    if (req.user.role !== "Admin") {
       return res.status(401).json({
         success: false,
         message: "Protected Route for Only Admins",
@@ -57,7 +57,7 @@ exports.isAdmin = async (req, res, next) => {
 // isCustomer
 exports.isCustomer = async (req, res, next) => {
   try {
-    if (req.user.accountType !== "Customer") {
+    if (req.user.role !== "Customer") {
       return res.status(401).json({
         success: false,
         message: "Protected Route for Only Customers",

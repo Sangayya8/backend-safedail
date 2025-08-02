@@ -17,7 +17,9 @@ const userSchema=new mongoose.Schema({
     },
     accountType:{
         type:String,
-        // enum:["Seller","Customer"]
+        // required:true,
+        default:'Customer',
+        enum:["Admin","Customer"]
     },
     additionalDetails:{
         type:mongoose.Schema.Types.ObjectId,

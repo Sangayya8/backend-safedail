@@ -12,12 +12,13 @@ app.use(cookieParser())
 const authRoutes=require('./routes/Auth')
 const userRoutes=require('./routes/User')
 const contactRoutes=require('./routes/Contact')
-
+const adminRoutes=require('./routes/Admin')
 
 
 app.use('/api/v1',authRoutes);
 app.use('/api/v1/user',userRoutes)
 app.use("/api/v1/contacts",contactRoutes)
+app.use('/api/v1/admin',adminRoutes);
 
 // activate 
 app.listen(port,()=>{
